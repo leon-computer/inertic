@@ -1,0 +1,11 @@
+;;   Copyright (c) Leon Grapenthin.  All rights reserved.
+;;   You must not remove this notice, or any other, from this software.
+
+{:paths ["src/lib"]
+ :deps
+ {org.clojure/clojure {:mvn/version "1.11.1"}}
+ :aliases
+ {:dev
+  {:extra-paths ["src/dev" "src/test"]}
+  :test
+  {:extra-paths ["src/test"]}}}
