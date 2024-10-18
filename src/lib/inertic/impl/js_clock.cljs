@@ -11,17 +11,16 @@
   (schedule [this t fn0]
     (let [dela (- t (p/now this))]
       (let [h (volatile! nil)
-            h (vreset! h (.setTimeout js/window
-                                      (fn [_]
-                                        (swap! timers disj @h)
-                                        (fn0))
-                                      (max 0 dela)))]
+            h (vreset! h (js/setTimeout (fn [_]
+                                          (swap! timers disj @h)
+                                          (fn0))
+                                        (max 0 dela)))]
         (swap! timers conj h)
         h)))
   (cancel [this sched]
     (when (@timers sched)
       (swap! timers disj sched)
-      (.clearTimeout js/window sched)
+      (js/clearTimeout sched)
       true))
   (stop [this]
     (run! #(p/cancel this %) @timers)
