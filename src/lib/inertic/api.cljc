@@ -47,9 +47,9 @@
 (defn cancel
   "Cancel the task scheduled with id."
   [c id]
-  (if (number? id)
-    (p/cancel c id)
-    (vreset! id false)))
+  (if (volatile? id)
+    (vreset! id false)
+    (p/cancel c id)))
 
 (defn clock
   "Create a clock instance.  Opts:
