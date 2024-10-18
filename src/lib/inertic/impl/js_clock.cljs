@@ -10,7 +10,12 @@
   (now [this] (.now js/Date))
   (schedule [this t fn0]
     (let [dela (- t (p/now this))]
-      (let [h (.setTimeout js/window (fn [_] (fn0)) (max 0 dela))]
+      (let [h (volatile! nil)
+            h (vreset! h (.setTimeout js/window
+                                      (fn [_]
+                                        (swap! timers disj @h)
+                                        (fn0))
+                                      (max 0 dela)))]
         (swap! timers conj h)
         h)))
   (cancel [this sched]
