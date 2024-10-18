@@ -16,8 +16,8 @@ Here is an example of a time based program, written against inertic.  It takes a
 (defn apple-collector [c]
   (let [bag (atom 0)
         add-apple #(println "In bag:" (swap! bag inc))
-        worker (i/run-every c (i/seconds 1) add-apple)]
-    (i/run-in c (i/seconds 3) #(i/cancel c worker))
+        worker (i/run-every c 1000 add-apple)]
+    (i/run-in c 3001 #(i/cancel c worker))
     bag))
 ```
 
@@ -43,7 +43,7 @@ But we can also run `apple-collector` with a test clock, allowing us to advance 
 (apple-collector tc)
 
 ;; Skip two seconds
-(i/skip tc (i/seconds 2))
+(i/skip tc 2000)
 
 In bag: 1
 In bag: 2
