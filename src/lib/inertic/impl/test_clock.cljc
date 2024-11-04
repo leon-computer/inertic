@@ -31,20 +31,16 @@
 (defrecord TestClock [state]
   p/Clock
   (now [this] (:t-now @state))
-  (schedule [this t fn0]
+  (schedule [this t fn0 id]
     (let [[before _]
           (-> state
               (swap-vals!
-               (fn [{:keys [t-now id-ctr scheduled]
+               (fn [{:keys [t-now scheduled]
                      :as state}]
                  (let [t (max t t-now)]
                    (-> state
-                       (update-in [:scheduled t] (fnil conj []) id-ctr)
-                       (assoc-in [:tasks id-ctr] [fn0 t])
-                       (update :id-ctr inc))))))
-
-          id
-          (:id-ctr before)]
+                       (update-in [:scheduled t] (fnil conj []) id)
+                       (assoc-in [:tasks id] [fn0 t]))))))]
       (fire-tasks! state)
       id))
   (cancel [this sched-id]
@@ -66,8 +62,7 @@
   "Create a test clock."
   []
   (map->TestClock {:state (atom {:t-now 0
-                                 :scheduled (sorted-map)
-                                 :id-ctr 0})}))
+                                 :scheduled (sorted-map)})}))
 
 (defn skip-to-next
   "Skip forward in time until reaching the next point in time where tasks

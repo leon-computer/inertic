@@ -14,15 +14,25 @@
 
 (defn hours [n] (* 60 60 1000 n))
 
+(def ^:private id-ctr (atom 0))
+
+(defn gen-id
+  "Generate suitable id argument for one time use."
+  [] (swap! id-ctr inc))
+
 (defn run-in
   "Runs fn0 once, in ms, from now."
-  [clock ms fn0]
-  (p/schedule clock (+ (p/now clock) ms) fn0))
+  ([clock ms fn0] (run-in clock ms fn0 (gen-id)))
+  ([clock ms fn0 id]
+   (p/schedule clock (+ (p/now clock) ms) fn0 id)
+   id))
 
 (defn run-at
   "See run-in."
-  [clock start-t-ms fn0]
-  (p/schedule clock start-t-ms fn0))
+  ([clock ms fn0] (run-at clock ms fn0 (gen-id)))
+  ([clock start-t-ms fn0 id]
+   (p/schedule clock start-t-ms fn0 id)
+   id))
 
 (defn run-every
   "Runs task every ms, at fixed rate.  I. e. a slow task / env parked by

@@ -8,23 +8,22 @@
 (defrecord JSClock [timers]
   p/Clock
   (now [this] (.now js/Date))
-  (schedule [this t fn0]
+  (schedule [this t fn0 id]
     (let [dela (- t (p/now this))]
-      (let [h (volatile! nil)
-            h (vreset! h (js/setTimeout (fn [_]
-                                          (swap! timers disj @h)
-                                          (fn0))
-                                        (max 0 dela)))]
-        (swap! timers conj h)
-        h)))
+      (let [h (js/setTimeout (fn [_]
+                               (swap! timers dissoc id)
+                               (fn0))
+                             (max 0 dela))]
+        (swap! timers assoc id h)
+        id)))
   (cancel [this sched]
-    (when (@timers sched)
-      (swap! timers disj sched)
-      (js/clearTimeout sched)
+    (when-let [timeout-id (@timers sched)]
+      (swap! timers dissoc sched)
+      (js/clearTimeout timeout-id)
       true))
   (stop [this]
     (run! #(p/cancel this %) @timers)
     (reset! timers #{})))
 
 (defn timeout-clock []
-  (->JSClock (atom #{})))
+  (->JSClock (atom {})))

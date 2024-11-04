@@ -18,15 +18,12 @@
   (proxy [TimerTask] []
     (run [] (f))))
 
-(defn make-id-gen [] (let [v (atom 0)] (fn [] (swap! v inc))))
-
 ;; Uses currentTimeMillis, more suitable for clock adjusted execution
 (defrecord JVMTimer [ttasks ^Timer timer id-gen]
   p/Clock
   (now [this] (System/currentTimeMillis))
-  (schedule [this t fn0]
-    (let [id (id-gen)
-          task (task (fn []
+  (schedule [this t fn0 id]
+    (let [task (task (fn []
                        (swap! ttasks dissoc id)
                        (fn0)))
           _ (swap! ttasks assoc id task)
@@ -44,10 +41,9 @@
 (defrecord JVMScheduler [ttasks ^ScheduledExecutorService scheduler id-gen]
   p/Clock
   (now [this] (quot (System/nanoTime) 1000000))
-  (schedule [this t fn0]
+  (schedule [this t fn0 id]
     (let [dela (- t (p/now this))]
-      (let [id (id-gen)
-            scheduled (promise)
+      (let [scheduled (promise)
             task
             (.schedule scheduler
                        ^Runnable
@@ -69,19 +65,18 @@
     (.shutdown scheduler)))
 
 (defn jvm-timer []
-  (map->JVMTimer {:timer (Timer.) :ttasks (atom {}) :id-gen (make-id-gen)}))
+  (map->JVMTimer {:timer (Timer.) :ttasks (atom {})}))
 
 (defn jvm-scheduler []
   (map->JVMScheduler {:scheduler (Executors/newSingleThreadScheduledExecutor)
-                      :ttasks (atom {})
-                      :id-gen (make-id-gen)}))
+                      :ttasks (atom {})}))
 
 (comment
   (def myc
     (let [c (jvm-timer)
           now (p/now c)
-          _ (p/schedule c (+ now (* 1000 3)) (fn [] (println "Hey")))
-          _ (p/schedule c (+ now (* 1000 10)) (fn [] (println "Hey")))]
+          _ (p/schedule c (+ now (* 1000 3)) (fn [] (println "Hey")) 1)
+          _ (p/schedule c (+ now (* 1000 10)) (fn [] (println "Hey")) 2)]
       c))
 
   (p/stop myc)
@@ -89,8 +84,8 @@
   (def mys
     (let [c (jvm-scheduler)
           now (p/now c)
-          _ (p/schedule c (+ now (* 1000 3)) (fn [] (println "Hey")))
-          _ (p/schedule c (+ now (* 1000 10)) (fn [] (println "Hey")))]
+          _ (p/schedule c (+ now (* 1000 3)) (fn [] (println "Hey")) 1)
+          _ (p/schedule c (+ now (* 1000 10)) (fn [] (println "Hey")) 2)]
       c))
 
   (p/stop myc))
